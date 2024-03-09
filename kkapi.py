@@ -4,11 +4,20 @@ from time import time, sleep
 from random import randrange
 from Cryptodome.Cipher import ARC4
 from Cryptodome.Hash import MD5
+import requests
 from tqdm import tqdm
 from utils.utils import create_requests_session
 
 class KkboxAPI:
-    def __init__(self, exception, kc1_key, secret_key, kkid = None):
+    def __init__(
+            self,
+            exception,
+            kc1_key,
+            secret_key,
+            kkid = None,
+            http_proxy_url = None,
+            https_proxy_url = None
+        ):
         self.exception = exception
 
         key_pattern = re.compile("[0-9a-f]{32}")
@@ -20,9 +29,14 @@ class KkboxAPI:
         self.kc1_key = kc1_key.encode('ascii')
         self.secret_key = secret_key.encode('ascii')
 
-        self.s = create_requests_session()
+        # self.s = create_requests_session()
+        self.s = requests.Session()
         self.s.headers.update({
             'user-agent': 'okhttp/3.14.9'
+        })
+        self.s.proxies.update({
+            "http": http_proxy_url,
+            "https": https_proxy_url,
         })
 
         self.kkid = kkid or '%032X' % randrange(16**32)
@@ -61,6 +75,7 @@ class KkboxAPI:
         params.update({'timestamp': timestamp})
 
         url = f'https://api-{host}.kkbox.com.tw/{path}'
+        # print(f"{url=}, {params=}")
         if not payload:
             r = self.s.get(url, params=params)
         else:
